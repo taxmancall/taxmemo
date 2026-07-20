@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>세법 기록부</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#132038;
+    --ink-soft:#1d2e4d;
+    --ink-softer:#26375a;
+    --paper:#FBF8F1;
+    --paper-line:#E4DDC8;
+    --seal:#a5322c;
+    --seal-soft:#a5322c22;
+    --slate:#5b6b82;
+    --brass:#9c7a3c;
+    --warn:#b9891f;
+    --warn-bg:#f6e9cd;
+    --good:#3f6b4f;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Noto Sans KR', sans-serif;
+    background:var(--ink);
+    background-image:
+      radial-gradient(circle at 15% 0%, var(--ink-soft) 0%, transparent 55%),
+      radial-gradient(circle at 85% 100%, var(--ink-soft) 0%, transparent 55%);
+    color:#232323;
+    min-height:100vh;
+    padding:28px 16px 60px;
+  }
+  .wrap{max-width:900px; margin:0 auto;}
+  .masthead{
+    text-align:center;
+    margin-bottom:22px;
+    color:#EDE7D6;
+  }
+  .masthead .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:.28em;
+    color:var(--brass);
+    text-transform:uppercase;
+  }
+  .masthead h1{
+    font-family:'Noto Serif KR', serif;
+    font-weight:900;
+    font-size:32px;
+    margin:6px 0 4px;
+    letter-spacing:-0.01em;
+  }
+  .masthead p{
+    margin:0;
+    font-size:13px;
+    color:#a8b3c8;
+  }
+
+  .tabs{
+    display:flex;
+    gap:6px;
+    padding:0 18px;
+  }
+  .tab-btn{
+    font-family:'Noto Serif KR', serif;
+    font-weight:700;
+    font-size:15px;
+    padding:12px 26px 14px;
+    border:none;
+    border-radius:10px 10px 0 0;
+    background:var(--ink-softer);
+    color:#c7d1e2;
+    cursor:pointer;
+    position:relative;
+    top:2px;
+    transition:background .15s, color .15s;
+  }
+  .tab-btn.active{
+    background:var(--paper);
+    color:var(--ink);
+  }
+  .tab-btn:not(.active):hover{ background:#2f4267; }
+
+  .panel{
+    background:var(--paper);
+    border-radius:4px 14px 14px 14px;
+    padding:30px 28px 34px;
+    box-shadow:0 24px 50px -20px rgba(0,0,0,.55);
+  }
+
+  .section-title{
+    font-family:'Noto Serif KR', serif;
+    font-weight:700;
+    font-size:14px;
+    color:var(--ink);
+    border-bottom:1px solid var(--paper-line);
+    padding-bottom:8px;
+    margin:0 0 16px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .section-title .n{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--seal);
+    border:1px solid var(--seal);
+    border-radius:50%;
+    width:18px; height:18px;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px 18px; }
+  .field{ display:flex; flex-direction:column; gap:5px; margin-bottom:14px;}
+  .field.full{ grid-column:1/-1; }
+  label{ font-size:12.5px; font-weight:500; color:var(--slate); }
+  label .req{ color:var(--seal); }
+  input, select, textarea{
+    font-family:'Noto Sans KR', sans-serif;
+    font-size:14px;
+    padding:9px 11px;
+    border:1px solid var(--paper-line);
+    border-radius:7px;
+    background:#fff;
+    color:#232323;
+    outline:none;
+  }
+  input:focus, select:focus, textarea:focus{ border-color:var(--brass); }
+  textarea{ resize:vertical; min-height:64px; line-height:1.5; }
+  .hint{ font-size:11px; color:#9aa5b8; }
+
+  .photo-box{
+    border:1.5px dashed var(--paper-line);
+    border-radius:8px;
+    padding:14px;
+    text-align:center;
+    background:#fff;
+    cursor:pointer;
+  }
+  .photo-box img{ max-width:100%; max-height:160px; border-radius:5px; margin-top:8px;}
+  .photo-box .ph-label{ font-size:12.5px; color:var(--slate);}
+
+  .toggle-row{ display:flex; align-items:center; gap:10px; }
+  .toggle-row input{ width:auto; }
+
+  .submit-btn{
+    font-family:'Noto Serif KR', serif;
+    font-weight:700;
+    font-size:15px;
+    padding:12px 22px;
+    border:none;
+    border-radius:8px;
+    background:var(--ink);
+    color:#EDE7D6;
+    cursor:pointer;
+    margin-top:6px;
+  }
+  .submit-btn:hover{ background:var(--ink-soft); }
+  .msg{ font-size:12.5px; margin-top:10px; }
+  .msg.ok{ color:var(--good); }
+  .msg.err{ color:var(--seal); }
+
+  /* search */
+  .search-bar{ display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  .search-bar input[type=text]{ flex:1; min-width:200px; }
+  .chips{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px; }
+  .chip{
+    font-size:12px; padding:5px 12px; border-radius:999px;
+    border:1px solid var(--paper-line); background:#fff; color:var(--slate);
+    cursor:pointer; user-select:none;
+  }
+  .chip.active{ background:var(--ink); color:#EDE7D6; border-color:var(--ink); }
+
+  .empty{
+    text-align:center; padding:50px 10px; color:#9aa5b8; font-size:13.5px;
+  }
+
+  .card{
+    background:#fff;
+    border:1px solid var(--paper-line);
+    border-radius:10px;
+    padding:18px 20px;
+    margin-bottom:14px;
+    position:relative;
+  }
+  .card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px;}
+  .badges{ display:flex; gap:6px; flex-wrap:wrap; }
+  .badge{
+    font-size:11px; padding:3px 9px; border-radius:999px; font-weight:500;
+  }
+  .badge.cat{ background:#eef1f6; color:var(--ink-soft); }
+  .badge.warn{ background:var(--warn-bg); color:var(--warn); }
+  .badge.stale{ background:#fdeceb; color:var(--seal); }
+
+  .seal{
+    font-family:'Noto Serif KR', serif;
+    width:40px; height:40px;
+    border-radius:50%;
+    border:2px solid var(--seal);
+    color:var(--seal);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:900; font-size:15px;
+    transform:rotate(-9deg);
+    flex-shrink:0;
+    position:relative;
+  }
+  .seal::before{
+    content:'';
+    position:absolute; inset:3px;
+    border:1px solid var(--seal);
+    border-radius:50%;
+  }
+  .meta-line{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px; color:var(--slate);
+    display:flex; gap:10px; align-items:center; margin-bottom:10px;
+  }
+  .card h3{
+    font-family:'Noto Serif KR', serif;
+    font-size:16.5px; margin:0 0 8px; color:var(--ink);
+  }
+  .card .row{ font-size:13.5px; margin-bottom:6px; line-height:1.55; }
+  .card .row .k{ color:var(--slate); font-weight:500; margin-right:4px; }
+  .card a{ color:var(--brass); }
+  .card-photo{ margin-top:8px; }
+  .card-photo img{ max-width:180px; border-radius:6px; border:1px solid var(--paper-line); }
+  .card-actions{ margin-top:12px; display:flex; gap:8px; }
+  .pdf-btn{
+    font-size:12.5px; padding:7px 14px; border-radius:7px; border:1px solid var(--ink);
+    background:transparent; color:var(--ink); cursor:pointer; font-weight:500;
+  }
+  .pdf-btn:hover{ background:var(--ink); color:#EDE7D6; }
+
+  @media(max-width:640px){
+    .grid{ grid-template-columns:1fr; }
+    .panel{ padding:22px 16px 26px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="masthead">
+    <div class="eyebrow">Internal · Tax Knowledge Ledger</div>
+    <h1>세법 기록부</h1>
+    <p>매일의 근거를 남기고, 필요할 때 정확히 찾는다</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="input">기록 입력</button>
+    <button class="tab-btn" data-tab="search">기록 검색</button>
+  </div>
+
+  <div class="panel">
+    <!-- INPUT -->
+    <div id="tab-input">
+      <div class="section-title"><span class="n">1</span>기본 정보</div>
+      <div class="grid">
+        <div class="field">
+          <label>작성자 <span class="req">*</span></label>
+          <input list="authorList" id="f-author" placeholder="이름 입력 또는 선택">
+          <datalist id="authorList"></datalist>
+        </div>
+        <div class="field">
+          <label>카테고리 <span class="req">*</span></label>
+          <select id="f-category">
+            <option value="">선택</option>
+            <option>양도소득세</option>
+            <option>상속증여세</option>
+            <option>부가가치세</option>
+            <option>법인세</option>
+            <option>종합소득세</option>
+            <option>원천세</option>
+            <option>노무·4대보험</option>
+            <option>기타</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>관련 거래처명</label>
+          <input type="text" id="f-client" placeholder="예: OO상사">
+        </div>
+        <div class="field">
+          <label>검색 태그</label>
+          <input type="text" id="f-tags" placeholder="쉼표로 구분 (예: 상속세, 배우자공제)">
+        </div>
+      </div>
+
+      <div class="section-title"><span class="n">2</span>내용</div>
+      <div class="field full">
+        <label>질문 · 이슈 요지 <span class="req">*</span></label>
+        <input type="text" id="f-summary" placeholder="한 줄로 요약">
+      </div>
+      <div class="field full">
+        <label>답변 · 결론 <span class="req">*</span></label>
+        <textarea id="f-answer" placeholder="상세 답변 내용"></textarea>
+      </div>
+      <div class="field full">
+        <label>근거 (법령 · 예규 · 판례) <span class="req">*</span></label>
+        <textarea id="f-basis" placeholder="예: 소득세법 제104조, 서면-2024-부동산-1234" style="min-height:44px;"></textarea>
+      </div>
+      <div class="field full">
+        <label>출처 링크</label>
+        <input type="text" id="f-link" placeholder="국세법령정보시스템 / 홈택스 등 원문 URL">
+      </div>
+
+      <div class="section-title"><span class="n">3</span>첨부 · 재검토</div>
+      <div class="grid">
+        <div class="field">
+          <label>참고자료 사진</label>
+          <div class="photo-box" id="photoBox">
+            <div class="ph-label">클릭해서 사진 첨부 (도서·문서 촬영본)</div>
+            <input type="file" id="f-photo" accept="image/*" style="display:none">
+            <img id="photoPreview" style="display:none">
+          </div>
+        </div>
+        <div class="field">
+          <label>재검토 필요 여부</label>
+          <div class="toggle-row">
+            <input type="checkbox" id="f-review">
+            <span class="hint">개정 가능성이 있어 추후 재확인이 필요함</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="submit-btn" id="saveBtn">기록 저장</button>
+      <div class="msg" id="saveMsg"></div>
+    </div>
+
+    <!-- SEARCH -->
+    <div id="tab-search" style="display:none">
+      <div class="search-bar">
+        <input type="text" id="q" placeholder="키워드 검색 (태그·요지·거래처·근거 전체 검색)">
+      </div>
+      <div class="chips" id="catChips"></div>
+      <div id="results"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATS = ["양도소득세","상속증여세","부가가치세","법인세","종합소득세","원천세","노무·4대보험","기타"];
+let activeCat = "";
+let records = [];
+
+async function loadRecords(){
+  try{
+    const res = await window.storage.get('records', true);
+    records = res ? JSON.parse(res.value) : [];
+  }catch(e){ records = []; }
+}
+async function saveRecords(){
+  await window.storage.set('records', JSON.stringify(records), true);
+}
+
+function updateAuthorList(){
+  const dl = document.getElementById('authorList');
+  const names = [...new Set(records.map(r=>r.author).filter(Boolean))];
+  dl.innerHTML = names.map(n=>`<option value="${escapeHtml(n)}">`).join('');
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// tabs
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.getElementById('tab-input').style.display = tab==='input' ? '' : 'none';
+    document.getElementById('tab-search').style.display = tab==='search' ? '' : 'none';
+    if(tab==='search') renderResults();
+  });
+});
+
+// photo upload with compression
+let currentPhoto = null;
+document.getElementById('photoBox').addEventListener('click', ()=>document.getElementById('f-photo').click());
+document.getElementById('f-photo').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const maxW = 900;
+      const scale = Math.min(1, maxW/img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width*scale;
+      canvas.height = img.height*scale;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      currentPhoto = canvas.toDataURL('image/jpeg', 0.6);
+      const preview = document.getElementById('photoPreview');
+      preview.src = currentPhoto;
+      preview.style.display='block';
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+// save
+document.getElementById('saveBtn').addEventListener('click', async ()=>{
+  const author = document.getElementById('f-author').value.trim();
+  const category = document.getElementById('f-category').value;
+  const summary = document.getElementById('f-summary').value.trim();
+  const answer = document.getElementById('f-answer').value.trim();
+  const basis = document.getElementById('f-basis').value.trim();
+  const msg = document.getElementById('saveMsg');
+
+  if(!author || !category || !summary || !answer || !basis){
+    msg.textContent = '작성자 · 카테고리 · 요지 · 답변 · 근거는 필수 항목입니다.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  const rec = {
+    id: Date.now()+'-'+Math.random().toString(36).slice(2,7),
+    createdAt: new Date().toISOString(),
+    author, category,
+    client: document.getElementById('f-client').value.trim(),
+    tags: document.getElementById('f-tags').value.trim(),
+    summary, answer, basis,
+    link: document.getElementById('f-link').value.trim(),
+    photo: currentPhoto,
+    needsReview: document.getElementById('f-review').checked
+  };
+
+  try{
+    const result = await window.storage.set('records', JSON.stringify([rec, ...records]), true);
+    if(!result){ throw new Error('저장 실패'); }
+    records = [rec, ...records];
+    msg.textContent = '저장되었습니다.';
+    msg.className = 'msg ok';
+    ['f-author','f-client','f-tags','f-summary','f-answer','f-basis','f-link'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('f-category').value='';
+    document.getElementById('f-review').checked=false;
+    currentPhoto = null;
+    document.getElementById('photoPreview').style.display='none';
+    updateAuthorList();
+  }catch(e){
+    msg.textContent = '저장 중 오류가 발생했습니다. 다시 시도해주세요.';
+    msg.className = 'msg err';
+  }
+});
+
+// chips
+function renderChips(){
+  const box = document.getElementById('catChips');
+  box.innerHTML = '';
+  const all = document.createElement('div');
+  all.className = 'chip' + (activeCat===''?' active':'');
+  all.textContent = '전체';
+  all.onclick = ()=>{ activeCat=''; renderChips(); renderResults(); };
+  box.appendChild(all);
+  CATS.forEach(c=>{
+    const el = document.createElement('div');
+    el.className = 'chip' + (activeCat===c?' active':'');
+    el.textContent = c;
+    el.onclick = ()=>{ activeCat = (activeCat===c ? '' : c); renderChips(); renderResults(); };
+    box.appendChild(el);
+  });
+}
+
+document.getElementById('q').addEventListener('input', renderResults);
+
+function isStale(createdAt){
+  const days = (Date.now() - new Date(createdAt).getTime()) / 86400000;
+  return days > 365;
+}
+function fmtDate(iso){
+  const d = new Date(iso);
+  return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0');
+}
+
+function renderResults(){
+  const q = document.getElementById('q').value.trim().toLowerCase();
+  const box = document.getElementById('results');
+  let list = records.filter(r=>{
+    if(activeCat && r.category !== activeCat) return false;
+    if(!q) return true;
+    const hay = [r.tags, r.summary, r.answer, r.basis, r.client, r.category, r.author].join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+
+  if(list.length === 0){
+    box.innerHTML = `<div class="empty">일치하는 기록이 없습니다. 다른 키워드로 검색하거나, 기록 입력 탭에서 새로 등록해보세요.</div>`;
+    return;
+  }
+
+  box.innerHTML = list.map(r=>{
+    const stale = isStale(r.createdAt);
+    return `
+    <div class="card" id="card-${r.id}">
+      <div class="card-top">
+        <div class="badges">
+          <span class="badge cat">${escapeHtml(r.category)}</span>
+          ${r.needsReview ? '<span class="badge warn">재검토 필요</span>' : ''}
+          ${stale ? '<span class="badge stale">1년 경과 · 개정 확인 권장</span>' : ''}
+        </div>
+        <div class="seal">${escapeHtml((r.author||'?').slice(0,1))}</div>
+      </div>
+      <div class="meta-line">
+        <span>${fmtDate(r.createdAt)}</span>
+        <span>·</span>
+        <span>${escapeHtml(r.author)}</span>
+        ${r.client ? `<span>·</span><span>${escapeHtml(r.client)}</span>` : ''}
+      </div>
+      <h3>${escapeHtml(r.summary)}</h3>
+      <div class="row"><span class="k">답변</span>${escapeHtml(r.answer)}</div>
+      <div class="row"><span class="k">근거</span>${escapeHtml(r.basis)}</div>
+      ${r.link ? `<div class="row"><span class="k">출처</span><a href="${escapeHtml(r.link)}" target="_blank">${escapeHtml(r.link)}</a></div>` : ''}
+      ${r.tags ? `<div class="row"><span class="k">태그</span>${escapeHtml(r.tags)}</div>` : ''}
+      ${r.photo ? `<div class="card-photo"><img src="${r.photo}"></div>` : ''}
+      <div class="card-actions">
+        <button class="pdf-btn" onclick="exportPdf('${r.id}')">PDF로 저장</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function exportPdf(id){
+  const rec = records.find(r=>r.id===id);
+  if(!rec) return;
+  const cardEl = document.getElementById('card-'+id);
+  const canvas = await html2canvas(cardEl, {scale:2, backgroundColor:'#ffffff'});
+  const imgData = canvas.toDataURL('image/png');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF('p','pt','a4');
+  const pageWidth = pdf.internal.pageSize.getWidth() - 60;
+  const ratio = pageWidth / canvas.width;
+  const imgHeight = canvas.height * ratio;
+  pdf.addImage(imgData, 'PNG', 30, 30, pageWidth, imgHeight);
+  const dateStr = fmtDate(rec.createdAt).replace(/\./g,'');
+  const safeSummary = (rec.summary||'').slice(0,20).replace(/[\\/:*?"<>|]/g,'');
+  pdf.save(`${dateStr}_${rec.category}_${safeSummary}.pdf`);
+}
+
+// init
+(async function init(){
+  await loadRecords();
+  updateAuthorList();
+  renderChips();
+  renderResults();
+})();
+</script>
+</body>
+</html>
